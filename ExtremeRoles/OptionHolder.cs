@@ -307,46 +307,42 @@ namespace ExtremeRoles
             }
         }
 
+        private static IRegionInfo createCustomRegionInfo(string ip, ushort port)
+        {
+            try
+            {
+                var serverUri = new Uri(ip);
+
+                if (serverUri.Scheme == "https")
+                {
+                    var serverInfo = new ServerInfo("custom", ip, port, false);
+                    return new StaticHttpRegionInfo(
+                        "custom",
+                        StringNames.NoTranslation,
+                        serverUri.Host,
+                        new ServerInfo[1] { serverInfo }).Cast<IRegionInfo>();
+                }
+            }
+            catch (UriFormatException)
+            {
+            }
+
+            return new DnsRegionInfo(
+                ip,
+                "custom",
+                StringNames.NoTranslation,
+                ip,
+                port,
+                false).Cast<IRegionInfo>();
+        }
+
         public static void UpdateRegion()
         {
             ServerManager serverManager = DestroyableSingleton<ServerManager>.Instance;
             IRegionInfo[] regions = defaultRegion;
 
-            IRegionInfo CustomRegion = null;
-            if (ConfigParser.Ip.Value.Contains("://"))
-            {
-                try
-                {
-                    var serverUri = new Uri(ConfigParser.Ip.Value);
-                    var serverHost = serverUri.Host;
-
-                    var serverInfo = new ServerInfo("custom", ConfigParser.Ip.Value, ConfigParser.Port.Value, false);
-                    CustomRegion = new StaticHttpRegionInfo(
-                        "custom",
-                        StringNames.NoTranslation,
-                        serverHost,
-                        new ServerInfo[1] { serverInfo }).Cast<IRegionInfo>();
-                } catch (UriFormatException)
-                {
-                    CustomRegion = new DnsRegionInfo(
-                        ConfigParser.Ip.Value,
-                        "custom",
-                        StringNames.NoTranslation,
-                        ConfigParser.Ip.Value,
-                        ConfigParser.Port.Value,
-                        false).Cast<IRegionInfo>();
-                }
-            } else
-            {
-                CustomRegion = new DnsRegionInfo(
-                    ConfigParser.Ip.Value,
-                    "custom",
-                    StringNames.NoTranslation,
-                    ConfigParser.Ip.Value,
-                    ConfigParser.Port.Value,
-                    false).Cast<IRegionInfo>();
-            }
-            regions = regions.Concat(new IRegionInfo[] { CustomRegion }).ToArray();
+            IRegionInfo customRegion = createCustomRegionInfo(ConfigParser.Ip.Value, ConfigParser.Port.Value);
+            regions = regions.Concat(new IRegionInfo[] { customRegion }).ToArray();
             ServerManager.DefaultRegions = regions;
             serverManager.AvailableRegions = regions;
         }

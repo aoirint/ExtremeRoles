@@ -315,7 +315,7 @@ namespace ExtremeRoles
 
                 if (serverUri.Scheme == "https")
                 {
-                    var serverInfo = new ServerInfo("custom", ip, port, false);
+                    var serverInfo = new ServerInfo("Http-1", ip, port, false);
                     return new StaticHttpRegionInfo(
                         "custom",
                         StringNames.NoTranslation,

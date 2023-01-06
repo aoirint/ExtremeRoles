@@ -312,14 +312,41 @@ namespace ExtremeRoles
             ServerManager serverManager = DestroyableSingleton<ServerManager>.Instance;
             IRegionInfo[] regions = defaultRegion;
 
-            var CustomRegion = new DnsRegionInfo(
-                ConfigParser.Ip.Value,
-                "custom",
-                StringNames.NoTranslation,
-                ConfigParser.Ip.Value,
-                ConfigParser.Port.Value,
-                false);
-            regions = regions.Concat(new IRegionInfo[] { CustomRegion.Cast<IRegionInfo>() }).ToArray();
+            IRegionInfo CustomRegion = null;
+            if (ConfigParser.Ip.Value.Contains("://"))
+            {
+                try
+                {
+                    var serverUri = new Uri(ConfigParser.Ip.Value);
+                    var serverHost = serverUri.Host;
+
+                    var serverInfo = new ServerInfo("custom", ConfigParser.Ip.Value, ConfigParser.Port.Value, false);
+                    CustomRegion = new StaticHttpRegionInfo(
+                        "custom",
+                        StringNames.NoTranslation,
+                        serverHost,
+                        new ServerInfo[1] { serverInfo }).Cast<IRegionInfo>();
+                } catch (UriFormatException)
+                {
+                    CustomRegion = new DnsRegionInfo(
+                        ConfigParser.Ip.Value,
+                        "custom",
+                        StringNames.NoTranslation,
+                        ConfigParser.Ip.Value,
+                        ConfigParser.Port.Value,
+                        false).Cast<IRegionInfo>();
+                }
+            } else
+            {
+                CustomRegion = new DnsRegionInfo(
+                    ConfigParser.Ip.Value,
+                    "custom",
+                    StringNames.NoTranslation,
+                    ConfigParser.Ip.Value,
+                    ConfigParser.Port.Value,
+                    false).Cast<IRegionInfo>();
+            }
+            regions = regions.Concat(new IRegionInfo[] { CustomRegion }).ToArray();
             ServerManager.DefaultRegions = regions;
             serverManager.AvailableRegions = regions;
         }

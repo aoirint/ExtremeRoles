@@ -1,12 +1,12 @@
-﻿using ExtremeRoles.GhostRoles;
+﻿using System.Collections.Generic;
+
 using ExtremeRoles.GhostRoles.API;
 using ExtremeRoles.Module;
-using ExtremeRoles.Module.AbilityButton.GhostRoles;
-using ExtremeRoles.Performance;
+using ExtremeRoles.Module.AbilityFactory;
 using ExtremeRoles.Roles;
 using ExtremeRoles.Roles.API;
-using Hazel;
-using System.Collections.Generic;
+using ExtremeRoles.Performance;
+
 
 namespace ExtremeRoles.GhostRoles.Impostor
 {
@@ -32,13 +32,14 @@ namespace ExtremeRoles.GhostRoles.Impostor
 
         public override void CreateAbility()
         {
-            this.Button = new AbilityCountButton(
+            this.Button = GhostRoleAbilityFactory.CreateCountAbility(
                 AbilityType.SaboEvilResetSabotageCool,
-                this.UseAbility,
+                 FastDestroyableSingleton<HudManager>.Instance.SabotageButton.graphic.sprite,
+                this.isReportAbility(),
                 this.isPreCheck,
                 this.isAbilityUse,
-                FastDestroyableSingleton<HudManager>.Instance.SabotageButton.graphic.sprite,
-                rpcHostCallAbility: abilityCall);
+                this.UseAbility,
+                abilityCall, true);
             this.ButtonInit();
         }
 
@@ -47,12 +48,12 @@ namespace ExtremeRoles.GhostRoles.Impostor
         public override void Initialize()
         { }
 
-        public override void ReseOnMeetingEnd()
+        protected override void OnMeetingEndHook()
         {
             return;
         }
 
-        public override void ReseOnMeetingStart()
+        protected override void OnMeetingStartHook()
         {
             return;
         }

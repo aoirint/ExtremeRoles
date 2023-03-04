@@ -144,7 +144,7 @@ namespace ExtremeRoles.Roles.Solo.Crewmate
             }
         }
 
-        public void ResetOnMeetingEnd()
+        public void ResetOnMeetingEnd(GameData.PlayerInfo exiledPlayer = null)
         {
             if (this.isActiveMeetingCount &&
                 this.meetingCounter >= this.maxMeetingCount)
@@ -223,15 +223,16 @@ namespace ExtremeRoles.Roles.Solo.Crewmate
                 return;
             }
 
-            if (!this.awakeRole || 
-                (!this.canResurrect && !this.isResurrected))
+            if ((!this.awakeRole || 
+                (!this.canResurrect && !this.isResurrected)) &&
+                rolePlayer.myTasks.Count != 0)
             {
                 float taskGage = Player.GetPlayerTaskGage(rolePlayer);
 
                 if (taskGage >= this.awakeTaskGage && !this.awakeRole)
                 {
                     this.awakeRole = true;
-                    this.HasOtherVison = this.awakeHasOtherVision;
+                    this.HasOtherVision = this.awakeHasOtherVision;
                 }
                 if (taskGage >= this.resurrectTaskGage && 
                     !this.canResurrect)
@@ -346,7 +347,7 @@ namespace ExtremeRoles.Roles.Solo.Crewmate
         }
 
         public override void ExiledAction(
-            GameData.PlayerInfo rolePlayer)
+            PlayerControl rolePlayer)
         {
 
             if (this.isResurrected) { return; }
@@ -462,7 +463,7 @@ namespace ExtremeRoles.Roles.Solo.Crewmate
             this.meetingCoolDown = allOpt[
                 GetRoleOptionId(ResurrecterOption.ResurrectMeetingCooltime)].GetValue();
 
-            this.awakeHasOtherVision = this.HasOtherVison;
+            this.awakeHasOtherVision = this.HasOtherVision;
             this.canResurrect = false;
             this.isResurrected = false;
             this.activateResurrectTimer = false;
@@ -470,12 +471,12 @@ namespace ExtremeRoles.Roles.Solo.Crewmate
             if (this.awakeTaskGage <= 0.0f)
             {
                 this.awakeRole = true;
-                this.HasOtherVison = this.awakeHasOtherVision;
+                this.HasOtherVision = this.awakeHasOtherVision;
             }
             else
             {
                 this.awakeRole = false;
-                this.HasOtherVison = false;
+                this.HasOtherVision = false;
             }
         }
 

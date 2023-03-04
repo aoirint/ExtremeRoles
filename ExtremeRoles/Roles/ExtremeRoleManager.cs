@@ -277,8 +277,6 @@ namespace ExtremeRoles.Roles
             ExtremeRoleId.Villain
         };
 
-        private static int roleControlId = 0;
-
         public enum ReplaceOperation : byte
         {
             ResetVanillaRole = 0,
@@ -326,7 +324,6 @@ namespace ExtremeRoles.Roles
 
         public static void Initialize()
         {
-            roleControlId = 0;
             GameRole.Clear();
             foreach (var role in CombRole.Values)
             {
@@ -382,7 +379,7 @@ namespace ExtremeRoles.Roles
         }
 
         public static void SetPlayerIdToMultiRoleId(
-            byte combType, int roleId, byte playerId, byte id, byte bytedRoleType)
+            byte combType, int roleId, byte playerId, int id, byte bytedRoleType)
         {
             RoleTypes roleType = (RoleTypes)bytedRoleType;
 
@@ -407,33 +404,27 @@ namespace ExtremeRoles.Roles
 
                 SingleRoleBase addRole = role.Clone();
 
-                IRoleAbility abilityRole = addRole as IRoleAbility;
-
-                if (abilityRole != null && CachedPlayerControl.LocalPlayer.PlayerId == playerId)
+                if (addRole is IRoleAbility abilityRole && 
+                    CachedPlayerControl.LocalPlayer.PlayerId == playerId)
                 {
                     Helper.Logging.Debug("Try Create Ability NOW!!!");
                     abilityRole.CreateAbility();
                 }
 
                 addRole.Initialize();
-                addRole.GameControlId = id;
-                roleControlId = id + 1;
-                lock (GameRole)
-                {
-                    GameRole.Add(playerId, addRole);
-                }
+                addRole.SetControlId(id);
+
+                SetNewRole(playerId, addRole);
 
                 if (hasVanilaRole)
                 {
-                    ((MultiAssignRoleBase)GameRole[
-                        playerId]).SetAnotherRole(
-                            new Solo.VanillaRoleWrapper(roleType));
+                    SetNewAnothorRole(playerId, new Solo.VanillaRoleWrapper(roleType));
                 }
                 Helper.Logging.Debug($"PlayerId:{playerId}   AssignTo:{addRole.RoleName}");
             }
         }
         public static void SetPlyerIdToSingleRoleId(
-            int roleId, byte playerId)
+            int roleId, byte playerId, int controlId)
         {
 
             if (!Enum.IsDefined(typeof(RoleTypes), Convert.ToUInt16(roleId)))
@@ -448,13 +439,14 @@ namespace ExtremeRoles.Roles
                     role = new Xion(playerId);
                 }
 
-                setPlyerIdToSingleRole(playerId, role);
+                setPlyerIdToSingleRole(playerId, role, controlId);
             }
             else
             {
                 setPlyerIdToSingleRole(
                     playerId,
-                    new Solo.VanillaRoleWrapper((RoleTypes)roleId));
+                    new Solo.VanillaRoleWrapper((RoleTypes)roleId),
+                    controlId);
             }
         }
 
@@ -487,49 +479,46 @@ namespace ExtremeRoles.Roles
             lock (GameRole)
             {
                 GameRole[playerId] =  newRole;
+                ExtremeRolesPlugin.ShipState.AddGlobalActionRole(newRole);
             }
         }
 
+        public static void SetNewAnothorRole(byte playerId, SingleRoleBase newRole)
+        {
+            ((MultiAssignRoleBase)GameRole[playerId]).SetAnotherRole(newRole);
+            ExtremeRolesPlugin.ShipState.AddGlobalActionRole(newRole);
+        }
+
         private static void setPlyerIdToSingleRole(
-            byte playerId, SingleRoleBase role)
+            byte playerId, SingleRoleBase role, int controlId)
         {
 
             SingleRoleBase addRole = role.Clone();
 
-            IRoleAbility abilityRole = addRole as IRoleAbility;
-
-            if (abilityRole != null && CachedPlayerControl.LocalPlayer.PlayerId == playerId)
+            if (addRole is IRoleAbility abilityRole && 
+                CachedPlayerControl.LocalPlayer.PlayerId == playerId)
             {
                 Helper.Logging.Debug("Try Create Ability NOW!!!");
                 abilityRole.CreateAbility();
             }
 
             addRole.Initialize();
-            addRole.GameControlId = roleControlId;
-            roleControlId = roleControlId + 1;
+            addRole.SetControlId(controlId);
 
             if (!GameRole.ContainsKey(playerId))
             {
-                lock (GameRole)
-                {
-                    GameRole.Add(playerId, addRole);
-                }
+                SetNewRole(playerId, addRole);
             }
             else
             {
-                ((MultiAssignRoleBase)GameRole[
-                    playerId]).SetAnotherRole(addRole);
-                
-                IRoleAbility multiAssignAbilityRole = ((MultiAssignRoleBase)GameRole[
-                    playerId]) as IRoleAbility;
+                SetNewAnothorRole(playerId, addRole);
 
-                if (multiAssignAbilityRole != null &&
+                if (GameRole[playerId] is IRoleAbility multiAssignAbilityRole &&
                     CachedPlayerControl.LocalPlayer.PlayerId == playerId)
                 {
                     if (multiAssignAbilityRole.Button != null)
                     {
-                        multiAssignAbilityRole.Button.PositionOffset = new UnityEngine.Vector3(0, 2.0f, 0);
-                        multiAssignAbilityRole.Button.ReplaceHotKey(UnityEngine.KeyCode.C);
+                        multiAssignAbilityRole.Button.SetHotKey(UnityEngine.KeyCode.C);
                     }
                 }
             }

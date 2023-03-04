@@ -2,6 +2,7 @@
 
 using AmongUs.GameOptions;
 
+using ExtremeRoles.Module.RoleAssign;
 using ExtremeRoles.Roles;
 using ExtremeRoles.Roles.API.Extension.State;
 using ExtremeRoles.Performance;
@@ -16,7 +17,7 @@ namespace ExtremeRoles.Patches
         // 2022/08/14:Xionは最大20倍速で動けるのでとりあえず100を突っ込んどく
         private const float maxModSpeed = 100.0f;
 
-        private static float playerBaseSpeed = GameOptionsManager.Instance.CurrentGameOptions.GetFloat(
+        private static float playerBaseSpeed => GameOptionsManager.Instance.CurrentGameOptions.GetFloat(
             FloatOptionNames.PlayerSpeedMod);
 
         public static bool Prefix(
@@ -43,7 +44,7 @@ namespace ExtremeRoles.Patches
 
         public static void Postfix(PlayerPhysics __instance)
         {
-            if (!ExtremeRolesPlugin.ShipState.IsRoleSetUpEnd) { return; }
+            if (!RoleAssignState.Instance.IsRoleSetUpEnd) { return; }
             if (ExtremeRoleManager.GameRole.Count == 0) { return; }
 
             if (__instance.AmOwner && 

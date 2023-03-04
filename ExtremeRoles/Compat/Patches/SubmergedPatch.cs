@@ -5,6 +5,7 @@ using System.Reflection;
 using HarmonyLib;
 
 using UnityEngine;
+using ExtremeRoles.Module.RoleAssign;
 using ExtremeRoles.Roles.API.Extension.State;
 using ExtremeRoles.Performance;
 
@@ -38,10 +39,9 @@ namespace ExtremeRoles.Compat.Patches
 
     public static class SubmergedExileControllerWrapUpAndSpawnPatch
     {
-        public static void Prefix(ExileController __instance)
+        public static void Prefix()
         {
-            ExtremeRoles.Patches.Controller.ExileControllerWrapUpPatch.WrapUpPrefix(
-                __instance);
+            ExtremeRoles.Patches.Controller.ExileControllerWrapUpPatch.WrapUpPrefix();
         }
 
         public static void Postfix(ExileController __instance)
@@ -97,7 +97,7 @@ namespace ExtremeRoles.Compat.Patches
             var submergedMod = ExtremeRolesPlugin.Compat.ModMap as Mods.SubmergedMap;
             if (submergedMod == null) { return; }
 
-            if (!ExtremeRolesPlugin.ShipState.IsRoleSetUpEnd) { return; }
+            if (!RoleAssignState.Instance.IsRoleSetUpEnd) { return; }
             if (Roles.ExtremeRoleManager.GetLocalPlayerRole().Id != Roles.ExtremeRoleId.Assassin) { return; }
 
             object instance = submarineOxygenSystemInstance.GetValue(null);

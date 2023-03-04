@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 
-using UnhollowerBaseLib;
-using UnhollowerRuntimeLib;
+using Il2CppInterop.Runtime;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
 
 using ExtremeRoles.Helper;
@@ -24,18 +24,7 @@ namespace ExtremeRoles.Resources
 
         public const string TitleBurner = "ExtremeRoles.Resources.TitleBurner.png";
 
-        public const string TabGlobal = "ExtremeRoles.Resources.TabGlobalSetting.png";
-        public const string TabCrewmate = "ExtremeRoles.Resources.TabCrewmateSetting.png";
-        public const string TabImpostor = "ExtremeRoles.Resources.TabImpostorSetting.png";
-        public const string TabNeutral = "ExtremeRoles.Resources.TabNeutralSetting.png";
-        public const string TabCombination = 
-            "ExtremeRoles.Resources.TabCombinationSetting.png";
-        public const string TabGhostCrewmate = 
-            "ExtremeRoles.Resources.TabGhostCrewmateSetting.png";
-        public const string TabGhostImpostor = 
-            "ExtremeRoles.Resources.TabGhostImpostorSetting.png";
-        public const string TabGhostNeutral = 
-            "ExtremeRoles.Resources.TabGhostNeutralSetting.png";
+        public const string TabImagePathFormat = "ExtremeRoles.Resources.SettingTab.{0}.png";
 
         public const string HiroAcaSearch = "ExtremeRoles.Resources.Search.png";
         public const string GuesserGuess = "ExtremeRoles.Resources.GuesserGuess.png";

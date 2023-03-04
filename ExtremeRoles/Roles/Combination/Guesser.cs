@@ -12,6 +12,8 @@ using ExtremeRoles.Module.CustomMonoBehaviour;
 using ExtremeRoles.Resources;
 using ExtremeRoles.Roles.API;
 using ExtremeRoles.Roles.API.Interface;
+using ExtremeRoles.Roles.Solo;
+using ExtremeRoles.Roles.Solo.Crewmate;
 using ExtremeRoles.Performance;
 
 namespace ExtremeRoles.Roles.Combination
@@ -46,7 +48,7 @@ namespace ExtremeRoles.Roles.Combination
         }
 
         public override string RoleName => 
-            string.Concat(this.IsImpostor() ? "Evil" : "Nice", this.RawRoleName);
+            string.Concat(this.roleNamePrefix, this.RawRoleName);
 
         private bool canGuessNoneRole;
 
@@ -58,6 +60,7 @@ namespace ExtremeRoles.Roles.Combination
         private GuesserUi guesserUi = null;
 
         private TextMeshPro meetingGuessText = null;
+        private string roleNamePrefix;
 
         private static HashSet<ExtremeRoleId> alwaysMissRole = new HashSet<ExtremeRoleId>()
         {
@@ -328,7 +331,7 @@ namespace ExtremeRoles.Roles.Combination
             ExtremeRoleId roleId = targetRole.Id;
             ExtremeRoleId anotherRoleId = ExtremeRoleId.Null;
 
-            if (targetRole is Solo.VanillaRoleWrapper vanillaRole)
+            if (targetRole is VanillaRoleWrapper vanillaRole)
             {
                 roleId = (ExtremeRoleId)vanillaRole.VanilaRoleId;
             }
@@ -336,7 +339,7 @@ namespace ExtremeRoles.Roles.Combination
                 targetRole is MultiAssignRoleBase multiRole &&
                 multiRole.AnotherRole != null)
             {
-                if (multiRole.AnotherRole is Solo.VanillaRoleWrapper anothorVanillRole)
+                if (multiRole.AnotherRole is VanillaRoleWrapper anothorVanillRole)
                 {
                     anotherRoleId = (ExtremeRoleId)anothorVanillRole.VanilaRoleId;
                 }
@@ -346,8 +349,10 @@ namespace ExtremeRoles.Roles.Combination
                 }
             }
             
-            if (Solo.Crewmate.BodyGuard.TryGetShiledPlayerId(playerId, out byte _) ||
-                alwaysMissRole.Contains(targetRole.Id))
+            if ((
+                    BodyGuard.IsBlockMeetingKill && 
+                    BodyGuard.TryGetShiledPlayerId(playerId, out byte _)
+                ) || alwaysMissRole.Contains(targetRole.Id))
             {
                 missGuess();
             }
@@ -435,7 +440,7 @@ namespace ExtremeRoles.Roles.Combination
             render.transform.localScale *= new Vector2(0.625f, 0.625f);
         }
 
-        public void ResetOnMeetingEnd()
+        public void ResetOnMeetingEnd(GameData.PlayerInfo exiledPlayer = null)
         {
             this.guesserUi = null;
         }
@@ -485,12 +490,12 @@ namespace ExtremeRoles.Roles.Combination
                 false, parentOps);
             CreateIntOption(
                 GuesserOption.GuessNum,
-                1, 1, OptionHolder.MaxImposterNum, 1,
+                1, 1, GameSystem.MaxImposterNum, 1,
                 parentOps,
                 format: OptionUnit.Shot);
             CreateIntOption(
                 GuesserOption.MaxGuessNumWhenMeeting,
-                1, 1, OptionHolder.MaxImposterNum, 1,
+                1, 1, GameSystem.MaxImposterNum, 1,
                 parentOps,
                 format: OptionUnit.Shot);
             var noneGuessRoleOpt = CreateBoolOption(
@@ -539,6 +544,7 @@ namespace ExtremeRoles.Roles.Combination
                 GetRoleOptionId(GuesserOption.MaxGuessNumWhenMeeting)].GetValue();
 
             this.curGuessNum = 0;
+            this.roleNamePrefix = this.CreateImpCrewPrefix();
         }
 
         private void meetingInfoSetActive(bool active)

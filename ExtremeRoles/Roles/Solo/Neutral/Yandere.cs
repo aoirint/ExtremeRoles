@@ -2,13 +2,15 @@
 
 using UnityEngine;
 
+using AmongUs.GameOptions;
+
+using ExtremeRoles.Helper;
 using ExtremeRoles.Module;
 using ExtremeRoles.Roles.API;
 using ExtremeRoles.Roles.API.Interface;
 using ExtremeRoles.Roles.API.Extension.Neutral;
 using ExtremeRoles.Performance;
 using ExtremeRoles.Performance.Il2Cpp;
-using AmongUs.GameOptions;
 
 namespace ExtremeRoles.Roles.Solo.Neutral
 {
@@ -361,7 +363,7 @@ namespace ExtremeRoles.Roles.Solo.Neutral
             }
         }
 
-        public void ResetOnMeetingEnd()
+        public void ResetOnMeetingEnd(GameData.PlayerInfo exiledPlayer = null)
         {
             if (this.isRunawayNextMeetingEnd)
             {
@@ -398,7 +400,7 @@ namespace ExtremeRoles.Roles.Solo.Neutral
         {
             CreateIntOption(
                 YandereOption.TargetKilledKillCoolReduceRate,
-                85, 50, 99, 1,
+                85, 25, 99, 1,
                 parentOps, format: OptionUnit.Percentage);
 
             CreateFloatOption(
@@ -423,7 +425,7 @@ namespace ExtremeRoles.Roles.Solo.Neutral
 
             CreateIntOption(
                 YandereOption.MaxTargetNum,
-                5, 1, OptionHolder.VanillaMaxPlayerNum, 1, parentOps);
+                5, 1, GameSystem.VanillaMaxPlayerNum, 1, parentOps);
 
             CreateFloatOption(
                 YandereOption.RunawayTime,

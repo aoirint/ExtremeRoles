@@ -69,6 +69,7 @@ namespace ExtremeRoles.Roles.Solo.Crewmate
             ref Il2CppSystem.Collections.Generic.List<WinningPlayerData> winner,
             ref List<GameData.PlayerInfo> pulsWinner)
         {
+
             if (!rolePlayerInfo.IsDead || this.isDeadWin) { return; }
 
             switch (reason)
@@ -76,6 +77,7 @@ namespace ExtremeRoles.Roles.Solo.Crewmate
                 case GameOverReason.HumansByTask:
                 case GameOverReason.HumansByVote:
                 case GameOverReason.HumansDisconnect:
+                case GameOverReason.HideAndSeek_ByTimer:
                     this.RemoveWinner(rolePlayerInfo, winner, pulsWinner);
                     break;
                 default:
@@ -84,7 +86,8 @@ namespace ExtremeRoles.Roles.Solo.Crewmate
         }
         public void Update(PlayerControl rolePlayer)
         {
-            if (!this.awakeRole || !this.isDeadWin)
+            if ((!this.awakeRole || !this.isDeadWin) && 
+                rolePlayer.myTasks.Count != 0)
             {
                 float taskGage = Player.GetPlayerTaskGage(rolePlayer);
                 
@@ -105,7 +108,7 @@ namespace ExtremeRoles.Roles.Solo.Crewmate
                 if (taskGage >= this.awakeTaskGage && !this.awakeRole)
                 {
                     this.awakeRole = true;
-                    this.HasOtherVison = this.awakeHasOtherVision;
+                    this.HasOtherVision = this.awakeHasOtherVision;
                 }
             }
         }
@@ -178,7 +181,7 @@ namespace ExtremeRoles.Roles.Solo.Crewmate
         }
 
         public override void ExiledAction(
-            GameData.PlayerInfo rolePlayer)
+            PlayerControl rolePlayer)
         {
             updateTaskDo();
         }
@@ -217,18 +220,18 @@ namespace ExtremeRoles.Roles.Solo.Crewmate
             this.isNoWinSurvivorAssignGhostRole = OptionHolder.AllOption[
                 GetRoleOptionId(SurvivorOption.NoWinSurvivorAssignGhostRole)].GetValue();
 
-            this.awakeHasOtherVision = this.HasOtherVison;
+            this.awakeHasOtherVision = this.HasOtherVision;
             this.isDeadWin = false;
 
             if (this.awakeTaskGage <= 0.0f)
             {
                 this.awakeRole = true;
-                this.HasOtherVison = this.awakeHasOtherVision;
+                this.HasOtherVision = this.awakeHasOtherVision;
             }
             else
             {
                 this.awakeRole = false;
-                this.HasOtherVison = false;
+                this.HasOtherVision = false;
             }
         }
 

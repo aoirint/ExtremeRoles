@@ -9,12 +9,12 @@ using AmongUs.GameOptions;
 
 using Newtonsoft.Json.Linq;
 
-using BepInEx.IL2CPP.Utils.Collections;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
 
 using ExtremeRoles.Extension.Json;
 using ExtremeRoles.Helper;
 using ExtremeRoles.Module;
-using ExtremeRoles.Module.AbilityButton.Roles;
+using ExtremeRoles.Module.AbilityFactory;
 using ExtremeRoles.Module.CustomMonoBehaviour;
 using ExtremeRoles.Roles.API;
 using ExtremeRoles.Roles.API.Interface;
@@ -23,6 +23,7 @@ using ExtremeRoles.Performance.Il2Cpp;
 
 using ExtremeRoles.Compat.Interface;
 using ExtremeRoles.Compat.Mods;
+using ExtremeRoles.GameMode;
 
 namespace ExtremeRoles.Roles.Solo.Impostor
 {
@@ -30,7 +31,6 @@ namespace ExtremeRoles.Roles.Solo.Impostor
         SingleRoleBase,
         IRoleAbility,
         IRoleAwake<RoleTypes>,
-        IRoleExilHook,
         IRoleMurderPlayerHook,
         IRoleSpecialReset
     {
@@ -63,7 +63,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
             Glay
         }
 
-        public RoleAbilityButtonBase Button
+        public ExtremeAbilityButton Button
         {
             get => this.lightOffButton;
             set
@@ -82,7 +82,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
 
         public RoleTypes NoneAwakeRole => RoleTypes.Impostor;
 
-        private RoleAbilityButtonBase lightOffButton;
+        private ExtremeAbilityButton lightOffButton;
 
         private HashSet<byte> doll;
 
@@ -297,7 +297,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
         public void CreateAbility()
         {
             this.CreateAbilityCountButton(
-                Translation.GetString("Hypnosis"),
+                "Hypnosis",
                 Resources.Loader.CreateSpriteFromResources(
                    Resources.Path.HypnotistHypnosis));
 
@@ -306,7 +306,6 @@ namespace ExtremeRoles.Roles.Solo.Impostor
 
         public bool IsAbilityUse()
         {
-
             if (!this.IsAwake) { return false; }
 
             this.target = Player.GetClosestPlayerInRange(
@@ -316,7 +315,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
             return this.target != null && this.IsCommonUse();
         }
 
-        public void RoleAbilityResetOnMeetingStart()
+        public void ResetOnMeetingStart()
         {
             if (this.isAwake && this.doll.Count > 0)
             {
@@ -331,21 +330,19 @@ namespace ExtremeRoles.Roles.Solo.Impostor
             this.isActiveTimer = false;
         }
 
-        public void HookWrapUp(GameData.PlayerInfo exiledPlayer)
+        public void ResetOnMeetingEnd(GameData.PlayerInfo exiledPlayer = null)
         {
             updateAwakeCheck(exiledPlayer);
-        }
 
-        public void RoleAbilityResetOnMeetingEnd()
-        {
             if (!this.isAwake &&
-                this.canAwakeNow && 
+                this.canAwakeNow &&
                 this.killCount >= this.awakeKillCount)
             {
                 this.isAwake = true;
-                this.HasOtherVison = this.isAwakedHasOtherVision;
+                this.HasOtherVision = this.isAwakedHasOtherVision;
                 this.HasOtherKillCool = this.isAwakedHasOtherKillCool;
                 this.HasOtherKillRange = this.isAwakedHasOtherKillRange;
+                this.Button?.SetButtonShow(true);
             }
             if (this.isAwake && this.addRedPos.Count > 0)
             {
@@ -401,12 +398,10 @@ namespace ExtremeRoles.Roles.Solo.Impostor
             {
                 updateAwakeCheck(null);
             }
-            if (!this.isAwake)
+            if (!this.isAwake &&
+                this.Button != null)
             {
-                if (this.Button != null)
-                {
-                    this.Button.SetActive(false);
-                }
+                this.Button.SetButtonShow(false);
             }
 
             if (this.isActiveTimer)
@@ -538,7 +533,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
             return true;
         }
 
-        public override void ExiledAction(GameData.PlayerInfo rolePlayer)
+        public override void ExiledAction(PlayerControl rolePlayer)
         {
             foreach (byte playerId in this.doll)
             {
@@ -574,7 +569,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
         {
             CreateIntOption(
                 HypnotistOption.AwakeCheckImpostorNum,
-                1, 1, OptionHolder.MaxImposterNum, 1,
+                1, 1, GameSystem.MaxImposterNum, 1,
                 parentOps);
             CreateIntOption(
                 HypnotistOption.AwakeCheckTaskGage,
@@ -681,9 +676,9 @@ namespace ExtremeRoles.Roles.Solo.Impostor
             this.isAwakedHasOtherKillCool = true;
             this.isAwakedHasOtherKillRange = false;
 
-            if (this.HasOtherVison)
+            if (this.HasOtherVision)
             {
-                this.HasOtherVison = false;
+                this.HasOtherVision = false;
                 this.isAwakedHasOtherVision = true;
             }
 
@@ -701,7 +696,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
             if (this.canAwakeNow && this.awakeKillCount <= 0)
             {
                 this.isAwake = true;
-                this.HasOtherVison = this.isAwakedHasOtherVision;
+                this.HasOtherVision = this.isAwakedHasOtherVision;
                 this.HasOtherKillCool = this.isAwakedHasOtherKillCool;
                 this.HasOtherKillRange = this.isAwakedHasOtherKillRange;
             }
@@ -980,7 +975,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
             Vital,
         }
 
-        public RoleAbilityButtonBase Button
+        public ExtremeAbilityButton Button
         { 
             get => this.crakingButton;
             set
@@ -1008,7 +1003,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
         private string accessModule = string.Empty;
         private string crakingModule = string.Empty;
 
-        private RoleAbilityButtonBase crakingButton;
+        private ExtremeAbilityButton crakingButton;
 
         private TMPro.TextMeshPro tellText;
 
@@ -1033,7 +1028,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
             this.canUseCrakingModule = new HashSet<AbilityType>();
             this.prevKillState = false;
 
-            this.GameControlId = parent.GameControlId;
+            this.SetControlId(parent.GameControlId);
         }
 
         public void FeatMapModuleAccess(SystemConsoleType consoleType)
@@ -1099,6 +1094,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
                     this.crakingModule == string.Empty ?
                     consoleName : $"{this.crakingModule}, {consoleName}";
             }
+            this.Button?.SetButtonShow(true);
         }
 
         public void RemoveParent(byte rolePlayerId)
@@ -1118,6 +1114,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
                 case GameOverReason.ImpostorByKill:
                 case GameOverReason.ImpostorBySabotage:
                 case GameOverReason.ImpostorDisconnect:
+                case GameOverReason.HideAndSeek_ByKills:
                 case (GameOverReason)RoleGameOverReason.AssassinationMarin:
                     this.AddWinner(rolePlayerInfo, winner, pulsWinner);
                     break;
@@ -1132,18 +1129,17 @@ namespace ExtremeRoles.Roles.Solo.Impostor
             this.securitySprite = GameSystem.GetSecurityImage();
             this.vitalSprite = GameSystem.GetVitalImage();
 
-            this.Button = new ChargableButton(
-                Translation.GetString("traitorCracking"),
-                UseAbility,
-                IsAbilityUse,
+            this.Button = RoleAbilityFactory.CreateChargableAbility(
+                "traitorCracking",
                 this.adminSprite,
-                CleanUp,
+                IsAbilityUse,
+                UseAbility,
                 CheckAbility,
-                KeyCode.F);
+                CleanUp);
 
-            this.Button.SetAbilityCoolTime(
+            this.Button.Behavior.SetCoolTime(
                 hypnotist.DollCrakingCoolTime);
-            this.Button.SetAbilityActiveTime(
+            this.Button.Behavior.SetActiveTime(
                 hypnotist.DollCrakingActiveTime);
         }
 
@@ -1167,7 +1163,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
                     {
                         return false;
                     }
-                    this.minigame = ChargableButton.OpenMinigame(
+                    this.minigame = GameSystem.OpenMinigame(
                         watchConsole.MinigamePrefab);
                     break;
                 case AbilityType.Vital:
@@ -1176,7 +1172,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
                     {
                         return false;
                     }
-                    this.minigame = ChargableButton.OpenMinigame(
+                    this.minigame = GameSystem.OpenMinigame(
                         vitalConsole.MinigamePrefab);
                     break;
                 default:
@@ -1230,6 +1226,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
 
         public bool IsAbilityUse()
         {
+            if (this.canUseCrakingModule.Count == 0) { return false; }
 
             switch (this.nextUseAbilityType)
             {
@@ -1248,7 +1245,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
             }
         }
 
-        public void RoleAbilityResetOnMeetingStart()
+        public void ResetOnMeetingStart()
         {
             if (this.chargeTime != null)
             {
@@ -1269,7 +1266,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
             }
         }
 
-        public void RoleAbilityResetOnMeetingEnd()
+        public void ResetOnMeetingEnd(GameData.PlayerInfo exiledPlayer = null)
         {
             return;
         }
@@ -1288,7 +1285,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
             if (this.canUseCrakingModule.Count == 0 && 
                 this.Button != null)
             {
-                this.Button.SetActive(false);
+                this.Button.SetButtonShow(false);
             }
 
             if (MeetingHud.Instance == null &&
@@ -1316,7 +1313,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
                 return;
             }
 
-            this.chargeTime.text = Mathf.CeilToInt(this.Button.GetCurTime()).ToString();
+            this.chargeTime.text = Mathf.CeilToInt(this.Button.Timer).ToString();
             this.chargeTime.gameObject.SetActive(true);
         }
 
@@ -1346,7 +1343,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
         {
             if (targetRole.Id == this.Id)
             {
-                if (OptionHolder.Ship.IsSameNeutralSameWin)
+                if (ExtremeGameModeManager.Instance.ShipOption.IsSameNeutralSameWin)
                 {
                     return true;
                 }
@@ -1396,8 +1393,6 @@ namespace ExtremeRoles.Roles.Solo.Impostor
         }
         private void updateButtonSprite()
         {
-            var button = this.Button as ChargableButton;
-
             Sprite sprite = Resources.Loader.CreateSpriteFromResources(
                 Resources.Path.TestButton);
 
@@ -1415,7 +1410,8 @@ namespace ExtremeRoles.Roles.Solo.Impostor
                 default:
                     break;
             }
-            button.SetButtonImage(sprite);
+ 
+            this.Button.Behavior.SetButtonImage(sprite);
         }
 
         private void showText(string text)

@@ -35,7 +35,7 @@ namespace ExtremeRoles.Roles.API
                 colored: true);
 
             int spawnNum = this.IsImpostor() ? 
-                OptionHolder.MaxImposterNum : OptionHolder.VanillaMaxPlayerNum - 1;
+                GameSystem.MaxImposterNum : GameSystem.VanillaMaxPlayerNum - 1;
 
             CreateIntOption(
                 RoleCommonOption.RoleNum,
@@ -44,19 +44,19 @@ namespace ExtremeRoles.Roles.API
             return roleSetOption;
         }
 
-        protected sealed override void CreateVisonOption(
+        protected sealed override void CreateVisionOption(
             IOption parentOps)
         {
-            var visonOption = CreateBoolOption(
-                RoleCommonOption.HasOtherVison,
+            var visionOption = CreateBoolOption(
+                RoleCommonOption.HasOtherVision,
                 false, parentOps);
-            CreateFloatOption(RoleCommonOption.Vison,
+            CreateFloatOption(RoleCommonOption.Vision,
                 2f, 0.25f, 5.0f, 0.25f,
-                visonOption, format: OptionUnit.Multiplier);
+                visionOption, format: OptionUnit.Multiplier);
 
             CreateBoolOption(
                 RoleCommonOption.ApplyEnvironmentVisionEffect,
-               this.IsCrewmate(), visonOption);
+                this.IsCrewmate(), visionOption);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

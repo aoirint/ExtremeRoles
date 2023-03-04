@@ -19,6 +19,9 @@ namespace ExtremeRoles.Helper
 {
     public static class GameSystem
     {
+        public const int VanillaMaxPlayerNum = 15;
+        public const int MaxImposterNum = 14;
+
         public const string SkeldAdmin = "SkeldShip(Clone)/Admin/Ground/admin_bridge/MapRoomConsole";
         public const string SkeldSecurity = "SkeldShip(Clone)/Security/Ground/map_surveillance/SurvConsole";
 
@@ -39,6 +42,8 @@ namespace ExtremeRoles.Helper
             "ExtremeRoles.Resources.JsonData.AirShipSpawnPoint.json";
         private const string airShipKey = "VanillaRandomSpawn";
 
+        private const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
         public static HashSet<TaskTypes> SaboTask = new HashSet<TaskTypes>()
         {
             TaskTypes.FixLights,
@@ -56,6 +61,8 @@ namespace ExtremeRoles.Helper
         };
 
         private static GridArrange cachedArrange = null;
+
+        private static List<PlayerControl> bots = new List<PlayerControl>();
 
         public static bool IsLobby
         {
@@ -232,6 +239,24 @@ namespace ExtremeRoles.Helper
         {
             RPCOperator.Call(RPCOperator.Command.ForceEnd);
             RPCOperator.ForceEnd();
+        }
+
+        public static Minigame OpenMinigame(
+            Minigame prefab,
+            PlayerTask task = null,
+            Console console = null)
+        {
+            Minigame minigame = UnityEngine.Object.Instantiate(
+                prefab, Camera.main.transform, false);
+            minigame.transform.SetParent(Camera.main.transform, false);
+            minigame.transform.localPosition = new Vector3(0.0f, 0.0f, -50f);
+            if (console != null)
+            {
+                minigame.Console = console;
+            }
+            minigame.Begin(task);
+
+            return minigame;
         }
 
         public static void ReplaceToNewTask(byte playerId, int index, int taskIndex)
@@ -427,6 +452,40 @@ namespace ExtremeRoles.Helper
                 ver.Build, ver.Revision,
                 AmongUsClient.Instance.ClientId);
         }
+
+        public static void SpawnDummyPlayer(string name = "")
+        {
+            PlayerControl playerControl = UnityEngine.Object.Instantiate(
+                    AmongUsClient.Instance.PlayerPrefab);
+            playerControl.PlayerId = (byte)GameData.Instance.GetAvailableId();
+
+            bots.Add(playerControl);
+            GameData.Instance.AddPlayer(playerControl);
+            AmongUsClient.Instance.Spawn(playerControl, -2, InnerNet.SpawnFlags.None);
+
+            var hatMng = FastDestroyableSingleton<HatManager>.Instance;
+            var rng = RandomGenerator.GetTempGenerator();
+
+            int hat = rng.Next(hatMng.allHats.Count);
+            int pet = rng.Next(hatMng.allPets.Count);
+            int skin = rng.Next(hatMng.allSkins.Count);
+            int visor = rng.Next(hatMng.allVisors.Count);
+            int color = rng.Next(Palette.PlayerColors.Length);
+
+            playerControl.transform.position = PlayerControl.LocalPlayer.transform.position;
+            playerControl.GetComponent<DummyBehaviour>().enabled = true;
+            playerControl.NetTransform.enabled = false;
+            playerControl.SetName(string.IsNullOrEmpty(name) ? 
+                new string(Enumerable.Repeat(chars, 10).Select(s => s[rng.Next(s.Length)]).ToArray()) :
+                name);
+            playerControl.SetColor(color);
+            playerControl.SetHat(hatMng.allHats[hat].ProdId, color);
+            playerControl.SetPet(hatMng.allPets[pet].ProdId, color);
+            playerControl.SetVisor(hatMng.allVisors[visor].ProdId, color);
+            playerControl.SetSkin(hatMng.allSkins[skin].ProdId, color);
+            GameData.Instance.RpcSetTasks(playerControl.PlayerId, new byte[0]);
+        }
+
 
         private static void disableCollider<T>(GameObject obj) where T : Collider2D
         {

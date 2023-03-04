@@ -9,7 +9,6 @@ using ExtremeRoles.Module;
 using ExtremeRoles.Roles.API;
 using ExtremeRoles.Roles.API.Interface;
 using ExtremeRoles.Roles.API.Extension.Neutral;
-using ExtremeRoles.Module.AbilityButton.Roles;
 using ExtremeRoles.Resources;
 using ExtremeRoles.Performance;
 using ExtremeRoles.Performance.Il2Cpp;
@@ -158,7 +157,7 @@ namespace ExtremeRoles.Roles.Combination
         public const string Name = "HeroAca";
         public HeroAcademia() : base(
             Name, new Color(255f, 255f, 255f), 3,
-            OptionHolder.MaxImposterNum)
+            GameSystem.MaxImposterNum)
         {
             this.Roles.Add(new Hero());
             this.Roles.Add(new Villain());
@@ -426,7 +425,7 @@ namespace ExtremeRoles.Roles.Combination
             FeatButtonAbilityPercentage,
         }
 
-        public RoleAbilityButtonBase Button
+        public ExtremeAbilityButton Button
         {
             get => this.searchButton;
             set
@@ -435,7 +434,7 @@ namespace ExtremeRoles.Roles.Combination
             }
         }
 
-        private RoleAbilityButtonBase searchButton;
+        private ExtremeAbilityButton searchButton;
         private AllPlayerArrows arrow;
         private PlayerTargetArrow callTargetArrow;
         private OneForAllCondition cond;
@@ -460,21 +459,23 @@ namespace ExtremeRoles.Roles.Combination
         public void CreateAbility()
         {
             this.CreateNormalAbilityButton(
-                Translation.GetString("search"),
+                "search",
                 Loader.CreateSpriteFromResources(
                     Path.HiroAcaSearch),
-                abilityCleanUp: CleanUp);
+                abilityOff: CleanUp);
             this.Button.SetLabelToCrewmate();
         }
 
-        public bool IsAbilityUse() => this.IsCommonUse();
+        public bool IsAbilityUse() => 
+            this.cond == OneForAllCondition.FeatButtonAbility && 
+            this.IsCommonUse();
 
-        public void RoleAbilityResetOnMeetingEnd()
+        public void ResetOnMeetingEnd(GameData.PlayerInfo exiledPlayer = null)
         {
             return;
         }
 
-        public void RoleAbilityResetOnMeetingStart()
+        public void ResetOnMeetingStart()
         {
             if (this.arrow != null)
             {
@@ -515,7 +516,8 @@ namespace ExtremeRoles.Roles.Combination
                     this.CanKill = true;
                     if (this.Button != null)
                     {
-                        if (this.Button.IsAbilityActive() && this.arrow != null)
+                        if (this.Button.IsAbilityActive() && 
+                            this.arrow != null)
                         {
                             this.arrow.Update(rolePlayer.GetTruePosition());
                         }
@@ -638,7 +640,7 @@ namespace ExtremeRoles.Roles.Combination
         }
 
         public override void ExiledAction(
-            GameData.PlayerInfo rolePlayer)
+            PlayerControl rolePlayer)
         {
             HeroAcademia.UpdateVigilante(
                 HeroAcademia.Condition.HeroDown,
@@ -681,7 +683,7 @@ namespace ExtremeRoles.Roles.Combination
         {
             if (this.Button != null)
             {
-                this.Button.SetActive(active);
+                this.Button.SetButtonShow(active);
             }
         }
     }
@@ -692,7 +694,7 @@ namespace ExtremeRoles.Roles.Combination
             VigilanteSeeTime,
         }
 
-        public RoleAbilityButtonBase Button
+        public ExtremeAbilityButton Button
         {
             get => this.searchButton;
             set
@@ -701,7 +703,7 @@ namespace ExtremeRoles.Roles.Combination
             }
         }
 
-        private RoleAbilityButtonBase searchButton;
+        private ExtremeAbilityButton searchButton;
         private AllPlayerArrows arrow;
         private Arrow vigilanteArrow;
         private float vigilanteArrowTimer = 0.0f;
@@ -720,20 +722,20 @@ namespace ExtremeRoles.Roles.Combination
         public void CreateAbility()
         {
             this.CreateNormalAbilityButton(
-                Translation.GetString("search"),
+                "search",
                 Loader.CreateSpriteFromResources(
                     Path.HiroAcaSearch),
-                abilityCleanUp: CleanUp);
+                abilityOff: CleanUp);
         }
 
         public bool IsAbilityUse() => this.IsCommonUse();
 
-        public void RoleAbilityResetOnMeetingEnd()
+        public void ResetOnMeetingEnd(GameData.PlayerInfo exiledPlayer = null)
         {
             return;
         }
 
-        public void RoleAbilityResetOnMeetingStart()
+        public void ResetOnMeetingStart()
         {
             if (this.arrow != null)
             {
@@ -828,7 +830,7 @@ namespace ExtremeRoles.Roles.Combination
             return true;
         }
         public override void ExiledAction(
-            GameData.PlayerInfo rolePlayer)
+            PlayerControl rolePlayer)
         {
             HeroAcademia.UpdateVigilante(
                 HeroAcademia.Condition.VillainDown,
@@ -878,7 +880,7 @@ namespace ExtremeRoles.Roles.Combination
             Range,
         }
 
-        public RoleAbilityButtonBase Button
+        public ExtremeAbilityButton Button
         {
             get => this.callButton;
             set
@@ -889,7 +891,7 @@ namespace ExtremeRoles.Roles.Combination
 
         public VigilanteCondition Condition => this.condition;
 
-        private RoleAbilityButtonBase callButton;
+        private ExtremeAbilityButton callButton;
         private VigilanteCondition condition = VigilanteCondition.None;
         private float range;
         private byte target;
@@ -917,10 +919,10 @@ namespace ExtremeRoles.Roles.Combination
         public void CreateAbility()
         {
             this.CreateNormalAbilityButton(
-                Translation.GetString("call"),
+                "call",
                 Loader.CreateSpriteFromResources(
                     Path.VigilanteEmergencyCall),
-                abilityCleanUp: CleanUp);
+                abilityOff: CleanUp);
             this.Button.SetLabelToCrewmate();
         }
 
@@ -977,12 +979,12 @@ namespace ExtremeRoles.Roles.Combination
             }
         }
 
-        public void RoleAbilityResetOnMeetingEnd()
+        public void ResetOnMeetingEnd(GameData.PlayerInfo exiledPlayer = null)
         {
             return;
         }
 
-        public void RoleAbilityResetOnMeetingStart()
+        public void ResetOnMeetingStart()
         {
             return;
         }

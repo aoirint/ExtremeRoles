@@ -3,17 +3,17 @@ using System.Collections.Generic;
 
 using UnityEngine;
 
+using ExtremeRoles.GameMode;
 using ExtremeRoles.Helper;
 using ExtremeRoles.Module;
-using ExtremeRoles.Module.AbilityButton.Roles;
+using ExtremeRoles.Module.ExtremeShipStatus;
 using ExtremeRoles.Resources;
 using ExtremeRoles.Roles.API;
 using ExtremeRoles.Roles.API.Interface;
 using ExtremeRoles.Performance;
 using ExtremeRoles.Performance.Il2Cpp;
 
-using BepInEx.IL2CPP.Utils.Collections;
-using ExtremeRoles.Module.ExtremeShipStatus;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
 
 namespace ExtremeRoles.Roles.Solo.Impostor
 {
@@ -34,13 +34,13 @@ namespace ExtremeRoles.Roles.Solo.Impostor
         private int explosionKillChance;
         private float explosionRange;
         private bool tellExplosion;
-        private byte setTargetPlayerId;
-        private byte bombSettingPlayerId;
+        private PlayerControl setTargetPlayer;
+        private PlayerControl bombSettingPlayer;
 
         private Queue<byte> bombPlayerId;
         private TMPro.TextMeshPro tellText;
 
-        public RoleAbilityButtonBase Button
+        public ExtremeAbilityButton Button
         {
             get => this.bombButton;
             set
@@ -48,7 +48,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
                 this.bombButton = value;
             }
         }
-        private RoleAbilityButtonBase bombButton;
+        private ExtremeAbilityButton bombButton;
 
 
         public Bomber() : base(
@@ -63,44 +63,32 @@ namespace ExtremeRoles.Roles.Solo.Impostor
         {
 
             this.CreateAbilityCountButton(
-                Translation.GetString("setBomb"),
+                "setBomb",
                 Loader.CreateSpriteFromResources(
                     Path.BomberSetBomb),
-                checkAbility: CheckAbility,
-                abilityCleanUp: CleanUp);
+                CheckAbility, CleanUp);
         }
 
         public bool IsAbilityUse()
         {
-            this.setTargetPlayerId = byte.MaxValue;
-            var player = Player.GetClosestPlayerInKillRange();
-            if (player != null)
-            {
-                this.setTargetPlayerId = player.PlayerId;
-            }
-            return this.IsCommonUse() && this.setTargetPlayerId != byte.MaxValue;
+            this.setTargetPlayer = Player.GetClosestPlayerInKillRange();
+            return this.IsCommonUse() && this.setTargetPlayer != null;
         }
 
         public void CleanUp()
         {
-            bombPlayerId.Enqueue(this.bombSettingPlayerId);
-            bombSettingPlayerId = byte.MaxValue;
+            this.bombPlayerId.Enqueue(this.bombSettingPlayer.PlayerId);
+            this.bombSettingPlayer = null;
         }
 
         public bool CheckAbility()
-        {
-            byte targetPlayerId = byte.MaxValue;
-            var player = Player.GetClosestPlayerInKillRange();
-            if (player != null)
-            {
-                targetPlayerId = player.PlayerId;
-            }
-            return this.bombSettingPlayerId == targetPlayerId;
-        }
+            => Player.IsPlayerInRangeAndDrawOutLine(
+                CachedPlayerControl.LocalPlayer,
+                this.bombSettingPlayer, this, this.KillRange);
 
         public bool UseAbility()
         {
-            this.bombSettingPlayerId = this.setTargetPlayerId;
+            this.bombSettingPlayer = this.setTargetPlayer;
             return true;
         }
 
@@ -152,7 +140,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
 
         }
 
-        public void RoleAbilityResetOnMeetingStart()
+        public void ResetOnMeetingStart()
         {
             if (this.tellText != null)
             {
@@ -160,7 +148,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
             }
         }
 
-        public void RoleAbilityResetOnMeetingEnd()
+        public void ResetOnMeetingEnd(GameData.PlayerInfo exiledPlayer = null)
         {
             return;
         }
@@ -193,10 +181,10 @@ namespace ExtremeRoles.Roles.Solo.Impostor
             {
                 if (explosionKillChance > Random.RandomRange(0, 100))
                 {
-                    explosionKill(rolePlayer, bombPlayer, player);
+                    explosionKill(bombPlayer, player);
                 }
             }
-            explosionKill(rolePlayer, bombPlayer, bombPlayer);
+            explosionKill(bombPlayer, bombPlayer);
             if (this.tellExplosion)
             {
                 rolePlayer.StartCoroutine(
@@ -225,7 +213,7 @@ namespace ExtremeRoles.Roles.Solo.Impostor
                 if (!playerInfo.Disconnected &&
                     !playerInfo.IsDead &&
                     (playerInfo.PlayerId != sourcePlayer.PlayerId) &&
-                    (!playerInfo.Object.inVent || OptionHolder.Ship.CanKillVentInPlayer) &&
+                    (!playerInfo.Object.inVent || ExtremeGameModeManager.Instance.ShipOption.CanKillVentInPlayer) &&
                     (!ExtremeRoleManager.GameRole[playerInfo.PlayerId].IsImpostor() ||
                      playerInfo.PlayerId == rolePlayer.PlayerId))
                 {
@@ -249,29 +237,6 @@ namespace ExtremeRoles.Roles.Solo.Impostor
 
         }
 
-        private void explosionKill(
-            PlayerControl rolePlayer,
-            PlayerControl bombPlayer,
-            PlayerControl target)
-        {
-
-            if (Crewmate.BodyGuard.TryGetShiledPlayerId(
-                    target.PlayerId, out byte bodyGuard) &&
-                Crewmate.BodyGuard.RpcTryKillBodyGuard(
-                    bombPlayer.PlayerId, bodyGuard))
-            {
-                return;
-            }
-
-            Player.RpcUncheckMurderPlayer(
-                bombPlayer.PlayerId,
-                target.PlayerId,
-                byte.MaxValue);
-
-            ExtremeRolesPlugin.ShipState.RpcReplaceDeadReason(
-                target.PlayerId, ExtremeShipStatus.PlayerStatus.Explosion);
-        }
-
         private IEnumerator showText()
         {
             if (this.tellText == null)
@@ -291,5 +256,24 @@ namespace ExtremeRoles.Roles.Solo.Impostor
 
         }
 
+        private static void explosionKill(
+            PlayerControl bombPlayer,
+            PlayerControl target)
+        {
+
+            if (Crewmate.BodyGuard.TryRpcKillGuardedBodyGuard(
+                    bombPlayer.PlayerId, target.PlayerId))
+            {
+                return;
+            }
+
+            Player.RpcUncheckMurderPlayer(
+                bombPlayer.PlayerId,
+                target.PlayerId,
+                byte.MaxValue);
+
+            ExtremeRolesPlugin.ShipState.RpcReplaceDeadReason(
+                target.PlayerId, ExtremeShipStatus.PlayerStatus.Explosion);
+        }
     }
 }

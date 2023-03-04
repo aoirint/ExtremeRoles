@@ -11,7 +11,7 @@ using ExtremeRoles.Roles;
 using ExtremeRoles.Roles.API;
 using ExtremeRoles.Performance;
 
-using UnhollowerBaseLib.Attributes;
+using Il2CppInterop.Runtime.Attributes;
 
 namespace ExtremeRoles.Module.CustomMonoBehaviour
 {
@@ -323,7 +323,10 @@ namespace ExtremeRoles.Module.CustomMonoBehaviour
             {
                 return true;
             }
-            else if (role.IsImpostor())
+            else if (
+                role.IsImpostor() || 
+                role.Id == ExtremeRoleId.Madmate ||
+                role.Id == ExtremeRoleId.Doll)
             {
                 return ExtremeRolesPlugin.ShipState.IsAssassinAssign;
             }

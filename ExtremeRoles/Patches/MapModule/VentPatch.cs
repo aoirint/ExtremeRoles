@@ -3,6 +3,8 @@
 using UnityEngine;
 using AmongUs.GameOptions;
 
+using ExtremeRoles.GameMode;
+using ExtremeRoles.Module.RoleAssign;
 using ExtremeRoles.Roles.API.Extension.State;
 using ExtremeRoles.Roles;
 using ExtremeRoles.Roles.Solo.Impostor;
@@ -45,12 +47,7 @@ namespace ExtremeRoles.Patches.MapModule
 
             canUse = couldUse = false;
 
-            if (GameOptionsManager.Instance.CurrentGameOptions.GameMode != GameModes.Normal)
-            {
-                return true;
-            }
-
-            if (OptionHolder.Ship.DisableVent)
+            if (ExtremeGameModeManager.Instance.ShipOption.DisableVent)
             {
                 __result = num;
                 return false;
@@ -76,7 +73,9 @@ namespace ExtremeRoles.Patches.MapModule
                 return true; 
             }
 
-            bool roleCouldUse = ExtremeRoleManager.GameRole[playerInfo.PlayerId].CanUseVent();
+            var role = ExtremeRoleManager.GameRole[playerInfo.PlayerId];
+
+            bool roleCouldUse = role.CanUseVent();
 
             if (isCustomMapVent)
             {
@@ -84,26 +83,52 @@ namespace ExtremeRoles.Patches.MapModule
                     __instance, playerInfo, roleCouldUse);
                 return false;
             }
-
-            var usableDistance = __instance.UsableDistance;
+            
+            bool inVent = player.inVent;
 
             couldUse = (
                 !playerInfo.IsDead &&
-                (player.inVent || roleCouldUse) && 
-                (player.CanMove || player.inVent));
-            
+                roleCouldUse &&
+                (
+                    !role.HasTask() && !(player.MustCleanVent(__instance.Id)
+                ) 
+                || 
+                (
+                    inVent && Vent.currentVent == __instance
+                )) && 
+                ExtremeGameModeManager.Instance.Usable.CanUseVent(role) &&
+                (player.CanMove || inVent)
+            );
+
+            if (role.TryGetVanillaRoleId(out _))
+            {
+                couldUse = 
+                    couldUse && 
+                    playerInfo.Role.CanUse(__instance.Cast<IUsable>());
+            }
+
+            if (CachedShipStatus.Instance.Systems.TryGetValue(
+                    SystemTypes.Ventilation, out ISystemType systemType))
+            {
+                VentilationSystem ventilationSystem = systemType.TryCast<VentilationSystem>();
+                if (ventilationSystem != null && 
+                    ventilationSystem.IsVentCurrentlyBeingCleaned(__instance.Id))
+                {
+                    couldUse = false;
+                }
+            }
+
             canUse = couldUse;
             if (canUse)
             {
-                Vector2 truePosition = player.GetTruePosition();
+                Vector2 playerPos = player.Collider.bounds.center;
                 Vector3 position = __instance.transform.position;
-                num = Vector2.Distance(truePosition, position);
+                num = Vector2.Distance(playerPos, position);
 
                 canUse &= (
-                    num <= usableDistance &&
+                    num <= __instance.UsableDistance &&
                     !PhysicsHelpers.AnythingBetween(
-                        truePosition,
-                        position,
+                        player.Collider, playerPos, position,
                         Constants.ShipOnlyMask, false));
             }
 
@@ -150,7 +175,8 @@ namespace ExtremeRoles.Patches.MapModule
                 localPlayer.Data,
                 out canUse, out couldUse);
 
-            if (!canUse) { return false; }; // No need to execute the native method as using is disallowed anyways
+            // No need to execute the native method as using is disallowed anyways
+            if (!canUse || localPlayer.walkingToVent) { return false; }; 
 
             bool isEnter = !localPlayer.inVent;
 
@@ -176,7 +202,7 @@ namespace ExtremeRoles.Patches.MapModule
                 return false;
             }
 
-            if (ExtremeRolesPlugin.ShipState.IsRoleSetUpEnd)
+            if (RoleAssignState.Instance.IsRoleSetUpEnd)
             {
                 var underWarper = ExtremeRoleManager.GetSafeCastedLocalPlayerRole<UnderWarper>();
                 if (underWarper != null &&

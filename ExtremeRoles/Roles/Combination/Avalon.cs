@@ -15,7 +15,7 @@ namespace ExtremeRoles.Roles.Combination
         public const string Name = "AvalonsRoles";
         public Avalon() : base(
             Name, new Color(255f, 255f, 255f), 2,
-            OptionHolder.MaxImposterNum)
+            GameSystem.MaxImposterNum)
         {
             this.Roles.Add(new Assassin());
             this.Roles.Add(new Marlin());
@@ -101,7 +101,7 @@ namespace ExtremeRoles.Roles.Combination
         }
 
         public override void ExiledAction(
-            GameData.PlayerInfo rolePlayer)
+            PlayerControl rolePlayer)
         {
             
             if (isServant()) { return; }
@@ -109,9 +109,9 @@ namespace ExtremeRoles.Roles.Combination
             assassinMeetingTriggerOn(rolePlayer.PlayerId);
             if (AmongUsClient.Instance.AmHost)
             {
-                MeetingRoomManager.Instance.AssignSelf(rolePlayer.Object, null);
-                FastDestroyableSingleton<HudManager>.Instance.OpenMeetingRoom(rolePlayer.Object);
-                rolePlayer.Object.RpcStartMeeting(null);
+                MeetingRoomManager.Instance.AssignSelf(rolePlayer, null);
+                FastDestroyableSingleton<HudManager>.Instance.OpenMeetingRoom(rolePlayer);
+                rolePlayer.RpcStartMeeting(null);
             }
 
             this.IsFirstMeeting = false;
@@ -184,8 +184,6 @@ namespace ExtremeRoles.Roles.Combination
             this.CanSeeRoleBeforeFirstMeeting = allOption[
                 GetRoleOptionId(AssassinOption.CanSeeRoleBeforeFirstMeeting)].GetValue();
             this.IsFirstMeeting = true;
-
-            ExtremeRolesPlugin.ShipState.AddGlobalActionRole(this);
         }
 
         private void assassinMeetingTriggerOn(
@@ -263,7 +261,7 @@ namespace ExtremeRoles.Roles.Combination
             this.updateShowIcon();
         }
 
-        public void ResetOnMeetingEnd()
+        public void ResetOnMeetingEnd(GameData.PlayerInfo exiledPlayer = null)
         {
             this.updateShowIcon();
         }

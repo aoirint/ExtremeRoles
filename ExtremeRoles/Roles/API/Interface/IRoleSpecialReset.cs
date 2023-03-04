@@ -2,6 +2,7 @@
 
 using ExtremeRoles.Helper;
 using ExtremeRoles.Performance;
+using ExtremeRoles.Roles.API.Extension.State;
 using ExtremeRoles.Roles.Solo;
 
 namespace ExtremeRoles.Roles.API.Interface
@@ -39,33 +40,26 @@ namespace ExtremeRoles.Roles.API.Interface
         private static void abilityReset(
             SingleRoleBase targetRole)
         {
-            IRoleResetMeeting meetingResetRole = targetRole as IRoleResetMeeting;
-            if (meetingResetRole != null)
+            if (targetRole is IRoleAbility abilityRole)
+            {
+                abilityRole.Button.OnMeetingStart();
+            }
+            if (targetRole is IRoleResetMeeting meetingResetRole)
             {
                 meetingResetRole.ResetOnMeetingStart();
-            }
-            IRoleAbility abilityRole = targetRole as IRoleAbility;
-            if (abilityRole != null)
-            {
-                abilityRole.ResetOnMeetingStart();
             }
 
             MultiAssignRoleBase multiAssignRole = targetRole as MultiAssignRoleBase;
             if (multiAssignRole != null)
             {
-                if (multiAssignRole.AnotherRole != null)
+                if (multiAssignRole.AnotherRole is IRoleAbility multiAssignAbilityRole)
                 {
-                    meetingResetRole = multiAssignRole.AnotherRole as IRoleResetMeeting;
-                    if (meetingResetRole != null)
-                    {
-                        meetingResetRole.ResetOnMeetingStart();
-                    }
+                    multiAssignAbilityRole.Button.OnMeetingStart();
+                }
 
-                    abilityRole = multiAssignRole.AnotherRole as IRoleAbility;
-                    if (abilityRole != null)
-                    {
-                        abilityRole.ResetOnMeetingStart();
-                    }
+                if (multiAssignRole.AnotherRole is IRoleResetMeeting multiAssignMeetingResetRole)
+                {
+                    multiAssignMeetingResetRole.ResetOnMeetingStart();
                 }
             }
         }
@@ -75,9 +69,9 @@ namespace ExtremeRoles.Roles.API.Interface
             SingleRoleBase targetRole)
         {
             // シェイプシフターのリセット処理
-            if (targetRole.IsVanillaRole())
+            if (targetRole.TryGetVanillaRoleId(out RoleTypes roleId))
             {
-                if (((VanillaRoleWrapper)targetRole).VanilaRoleId == RoleTypes.Shapeshifter)
+                if (roleId == RoleTypes.Shapeshifter)
                 {
                     targetPlayer.Shapeshift(targetPlayer, false);
                 }

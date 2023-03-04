@@ -44,6 +44,31 @@ namespace ExtremeRoles.Roles.Combination
                 this.bytedBuddy.Clear();
             }
 
+            public string GetAllPlayerName()
+            {
+                List<string> playerName = new List<string>();
+
+                foreach (GameData.PlayerInfo player in this.PlayerInfo)
+                {
+                    if (player.PlayerId == CachedPlayerControl.LocalPlayer.PlayerId)
+                    {
+                        continue;
+                    }
+
+                    int count = playerName.Count;
+                    if (count > 1)
+                    {
+                        playerName.Add(Translation.GetString("andFirst"));
+                    }
+                    else if (count == 1)
+                    {
+                        playerName.Add(Translation.GetString("and"));
+                    }
+                    playerName.Add(player.PlayerName);
+                }
+                return string.Concat(playerName);
+            }
+
             public bool Contains(GameData.PlayerInfo player) => this.buddy.Contains(player);
 
             public bool Contains(byte playerId) => this.bytedBuddy.Contains(playerId);
@@ -105,20 +130,20 @@ namespace ExtremeRoles.Roles.Combination
                     {
                         if (this.hiddeRole is IRoleAbility abilityRole)
                         {
-                            abilityRole.Button.SetActive(false);
+                            abilityRole.Button.SetButtonShow(false);
                         }
                         return;
                     }
                 }
                 this.awake = true;
-                this.HasOtherVison = this.awakeHasOtherVision;
+                this.HasOtherVision = this.awakeHasOtherVision;
                 if (this.hiddeRole != null)
                 {
                     this.AnotherRole = this.hiddeRole;
                     this.CanHasAnotherRole = true;
                     if (this.AnotherRole is IRoleAbility abilityRole)
                     {
-                        abilityRole.Button.SetActive(false);
+                        abilityRole.Button.SetButtonShow(true);
                     }
                     this.hiddeRole = null;
                 }
@@ -153,27 +178,9 @@ namespace ExtremeRoles.Roles.Combination
         {
             if (IsAwake)
             {
-                List<string> fullDec = new List<string>();
-
-                foreach (GameData.PlayerInfo player in this.buddy?.PlayerInfo)
-                {
-                    if (player.PlayerId == CachedPlayerControl.LocalPlayer.PlayerId)
-                    {
-                        continue;
-                    }
-                    if (fullDec.Count == 0)
-                    {
-                        fullDec.Add(Translation.GetString("andFirst"));
-                    }
-                    else
-                    {
-                        fullDec.Add(Translation.GetString("and"));
-                    }
-                    fullDec.Add(player.PlayerName);
-                }
                 return string.Format(
                     base.GetFullDescription(),
-                    string.Concat(fullDec));
+                    this.buddy == null ? string.Empty : this.buddy.GetAllPlayerName());
             }
             else
             {
@@ -201,28 +208,9 @@ namespace ExtremeRoles.Roles.Combination
         {
             if (IsAwake)
             {
-                List<string> intro = new List<string>();
-
-                foreach (GameData.PlayerInfo player in this.buddy.PlayerInfo)
-                {
-                    if (player.PlayerId == CachedPlayerControl.LocalPlayer.PlayerId)
-                    {
-                        continue;
-                    }
-                    if (intro.Count == 0)
-                    {
-                        intro.Add(Translation.GetString("andFirst"));
-                    }
-                    else
-                    {
-                        intro.Add(Translation.GetString("and"));
-                    }
-                    intro.Add(player.PlayerName);
-                }
-
                 return string.Format(
-                    base.GetFullDescription(),
-                    string.Concat(intro));
+                    base.GetIntroDescription(),
+                    this.buddy == null ? string.Empty : this.buddy.GetAllPlayerName());
             }
             else
             {
@@ -274,17 +262,17 @@ namespace ExtremeRoles.Roles.Combination
             this.awakeTaskGage = (float)OptionHolder.AllOption[
                GetRoleOptionId(BuddyOption.AwakeTaskGage)].GetValue() / 100.0f;
 
-            this.awakeHasOtherVision = this.HasOtherVison;
+            this.awakeHasOtherVision = this.HasOtherVision;
 
             if (this.awakeTaskGage <= 0.0f)
             {
                 this.awake = true;
-                this.HasOtherVison = this.awakeHasOtherVision;
+                this.HasOtherVision = this.awakeHasOtherVision;
             }
             else
             {
                 this.awake = false;
-                this.HasOtherVison = false;
+                this.HasOtherVision = false;
             }
         }
 

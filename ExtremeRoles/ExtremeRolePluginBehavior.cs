@@ -1,6 +1,8 @@
 ﻿using ExtremeRoles.Helper;
 using ExtremeRoles.Performance;
+using ExtremeRoles.Module;
 using UnityEngine;
+using ExtremeRoles.Module.RoleAssign;
 
 namespace ExtremeRoles
 {
@@ -15,9 +17,9 @@ namespace ExtremeRoles
 #if DEBUG
             if (Input.GetKeyDown(KeyCode.F9) &&
                 ExtremeRolesPlugin.DebugMode.Value &&
-                ExtremeRolesPlugin.ShipState.IsRoleSetUpEnd)
+                RoleAssignState.Instance.IsRoleSetUpEnd)
             {
-                Logging.Debug($"{ExtremeRolesPlugin.ShipState.CreateStatistics()}");
+                Logging.Debug($"{PlayerStatistics.Create()}");
             }
             if (Input.GetKeyDown(KeyCode.F10) &&
                 ExtremeRolesPlugin.DebugMode.Value)
@@ -25,6 +27,25 @@ namespace ExtremeRoles
                 foreach(PetData pet in FastDestroyableSingleton<HatManager>.Instance.allPets)
                 {
                     Logging.Debug($"Cosmic Id:{pet.ProdId}");
+                }
+            }
+            if (Input.GetKeyDown(KeyCode.F11))
+            {
+                if (Roles.ExtremeRoleManager.GetLocalPlayerRole() is Roles.API.Interface.IRoleAbility abilityRole)
+                {
+                    Logging.Debug("---- Role Button Info ----");
+                    Logging.Debug($"Cool Time:{abilityRole.Button.Behavior.CoolTime}");
+                    Logging.Debug($"Active Time:{abilityRole.Button.Behavior.ActiveTime}");
+                    Logging.Debug($"Button State:{abilityRole.Button.State}");
+                }
+
+                var ghostRole = GhostRoles.ExtremeGhostRoleManager.GetLocalPlayerGhostRole();
+                if (ghostRole != null)
+                {
+                    Logging.Debug("---- Ghost Role Button Info ----");
+                    Logging.Debug($"Cool Time:{ghostRole.Button.Behavior.CoolTime}");
+                    Logging.Debug($"Active Time:{ghostRole.Button.Behavior.ActiveTime}");
+                    Logging.Debug($"Button State:{ghostRole.Button.State}");
                 }
             }
 #endif

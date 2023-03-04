@@ -26,8 +26,8 @@ namespace ExtremeRoles.Roles.Combination
         {
             IsNeutral,
             BecomNeutral,
-            BecomeNeutralLoverHasOtherVison,
-            BecomeNeutralLoverVison,
+            BecomeNeutralLoverHasOtherVision,
+            BecomeNeutralLoverVision,
             BecomeNeutralLoverApplyEnvironmentVisionEffect,
             BecomeNeutralLoverCanUseVent,
             DethWhenUnderAlive,
@@ -36,8 +36,8 @@ namespace ExtremeRoles.Roles.Combination
         private bool becomeKiller = false;
         private int limit = 0;
 
-        private bool killerLoverHasOtherVison = false;
-        private float killerLoverVison = 0.0f;
+        private bool killerLoverHasOtherVision = false;
+        private float killerLoverVision = 0.0f;
         private bool killerLoverIsApplyEnvironmentVisionEffect = false;
         private bool killerLoverCanUseVent = false;
 
@@ -94,7 +94,7 @@ namespace ExtremeRoles.Roles.Combination
         }
 
         public override void ExiledAction(
-            GameData.PlayerInfo rolePlayer)
+            PlayerControl rolePlayer)
         {
             exiledUpdate(rolePlayer);
         }
@@ -236,7 +236,7 @@ namespace ExtremeRoles.Roles.Combination
                 1, 1, 1, killerSetting,
                 invert: true,
                 enableCheckOption: parentOps,
-                tempMaxValue: OptionHolder.VanillaMaxPlayerNum - 1);
+                tempMaxValue: GameSystem.VanillaMaxPlayerNum - 1);
 
             CreateKillerOption(killerSetting);
             killerVisionSetting(killerSetting);
@@ -294,18 +294,18 @@ namespace ExtremeRoles.Roles.Combination
                     this.KillRange = baseOption.GetInt(Int32OptionNames.KillDistance);
                 }
 
-                this.killerLoverHasOtherVison = allOption[
-                    GetRoleOptionId(LoverOption.BecomeNeutralLoverHasOtherVison)].GetValue();
-                if (this.killerLoverHasOtherVison)
+                this.killerLoverHasOtherVision = allOption[
+                    GetRoleOptionId(LoverOption.BecomeNeutralLoverHasOtherVision)].GetValue();
+                if (this.killerLoverHasOtherVision)
                 {
-                    this.killerLoverVison = allOption[
-                        GetRoleOptionId(LoverOption.BecomeNeutralLoverVison)].GetValue();
+                    this.killerLoverVision = allOption[
+                        GetRoleOptionId(LoverOption.BecomeNeutralLoverVision)].GetValue();
                     this.killerLoverIsApplyEnvironmentVisionEffect = allOption[
                         GetRoleOptionId(LoverOption.BecomeNeutralLoverApplyEnvironmentVisionEffect)].GetValue();
                 }
                 else
                 {
-                    this.killerLoverVison = this.Vison;
+                    this.killerLoverVision = this.Vision;
                     this.killerLoverIsApplyEnvironmentVisionEffect = this.IsApplyEnvironmentVision;
                 }
 
@@ -322,20 +322,20 @@ namespace ExtremeRoles.Roles.Combination
         private void killerVisionSetting(
             IOption killerOpt)
         {
-            var visonOption = CreateBoolOption(
-                LoverOption.BecomeNeutralLoverHasOtherVison,
+            var visionOption = CreateBoolOption(
+                LoverOption.BecomeNeutralLoverHasOtherVision,
                 false, killerOpt);
-            CreateFloatOption(LoverOption.BecomeNeutralLoverVison,
+            CreateFloatOption(LoverOption.BecomeNeutralLoverVision,
                 2f, 0.25f, 5.0f, 0.25f,
-                visonOption, format: OptionUnit.Multiplier);
+                visionOption, format: OptionUnit.Multiplier);
 
             CreateBoolOption(
                 LoverOption.BecomeNeutralLoverApplyEnvironmentVisionEffect,
-                false, visonOption);
+                false, visionOption);
         }
 
         private void exiledUpdate(
-            GameData.PlayerInfo exiledPlayer)
+            PlayerControl exiledPlayer)
         {
             List<byte> alive = getAliveSameLover();
             alive.Remove(exiledPlayer.PlayerId);
@@ -392,8 +392,8 @@ namespace ExtremeRoles.Roles.Combination
             newKiller.Team = ExtremeRoleType.Neutral;
             newKiller.CanKill = true;
             newKiller.HasTask = false;
-            newKiller.HasOtherVison = newKiller.killerLoverHasOtherVison;
-            newKiller.Vison = newKiller.killerLoverVison;
+            newKiller.HasOtherVision = newKiller.killerLoverHasOtherVision;
+            newKiller.Vision = newKiller.killerLoverVision;
             newKiller.IsApplyEnvironmentVision = newKiller.killerLoverIsApplyEnvironmentVisionEffect;
             newKiller.UseVent = newKiller.killerLoverCanUseVent;
             newKiller.ChangeAllLoverToNeutral();
@@ -420,13 +420,14 @@ namespace ExtremeRoles.Roles.Combination
 
             List<byte> alive = new List<byte>();
 
-            foreach(var item in ExtremeRoleManager.GameRole)
+            foreach(var (playerId, role) in ExtremeRoleManager.GameRole)
             {
-                var player = GameData.Instance.GetPlayerById(item.Key);
-                if (this.IsSameControlId(item.Value) && 
-                    (!player.IsDead || !player.Disconnected))
+                var player = GameData.Instance.GetPlayerById(playerId);
+                if (this.IsSameControlId(role) && 
+                    !player.IsDead && 
+                    !player.Disconnected)
                 {
-                    alive.Add(item.Key);
+                    alive.Add(playerId);
                 }
             }
 

@@ -2,15 +2,13 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-using Hazel;
 using UnityEngine;
 
 using ExtremeRoles.Helper;
 using ExtremeRoles.Module;
-using ExtremeRoles.Module.AbilityButton.GhostRoles;
+using ExtremeRoles.Module.AbilityBehavior;
 using ExtremeRoles.Roles.API;
 using ExtremeRoles.Roles.API.Interface;
-
 
 namespace ExtremeRoles.GhostRoles.API
 {
@@ -36,14 +34,7 @@ namespace ExtremeRoles.GhostRoles.API
 
         public string Name => this.RoleName;
 
-        public GhostRoleAbilityButtonBase Button
-        {
-            get => this.AbilityButton;
-            set
-            {
-                this.AbilityButton = value;
-            }
-        }
+        public ExtremeAbilityButton Button { get; protected set; }
 
         public Color RoleColor => this.NameColor;
         public bool HasTask => this.Task;
@@ -55,7 +46,6 @@ namespace ExtremeRoles.GhostRoles.API
         protected string RoleName;
         protected Color NameColor;
         protected int OptionIdOffset;
-        protected GhostRoleAbilityButtonBase AbilityButton;
 
         protected bool Task;
 
@@ -190,6 +180,24 @@ namespace ExtremeRoles.GhostRoles.API
             this.controlId = newId;
         }
 
+        public void ResetOnMeetingEnd()
+        {
+            if (this.Button != null)
+            {
+                this.Button.OnMeetingEnd();
+            }
+            this.OnMeetingEndHook();
+        }
+
+        public void ResetOnMeetingStart()
+        {
+            if (this.Button != null)
+            {
+                this.Button.OnMeetingStart();
+            }
+            this.OnMeetingStartHook();
+        }
+
         protected void CreateButtonOption(
             IOption parentOps,
             float defaultActiveTime = float.MaxValue)
@@ -238,7 +246,7 @@ namespace ExtremeRoles.GhostRoles.API
             if (this.Button == null) { return; }
 
             var allOps = OptionHolder.AllOption;
-            this.Button.SetAbilityCoolTime(
+            this.Button.Behavior.SetCoolTime(
                 allOps[this.GetRoleOptionId(RoleAbilityCommonOption.AbilityCoolTime)].GetValue());
 
             IOption option;
@@ -247,24 +255,22 @@ namespace ExtremeRoles.GhostRoles.API
                     this.GetRoleOptionId(
                         RoleAbilityCommonOption.AbilityActiveTime), out option))
             {
-                this.Button.SetAbilityActiveTime(option.GetValue());
+                this.Button.Behavior.SetActiveTime(option.GetValue());
             }
 
-            var abilityCountButton = this.Button as AbilityCountButton;
-
-            if (allOps.TryGetValue(
+            if (this.Button.Behavior is AbilityCountBehavior behavior &&
+                allOps.TryGetValue(
                     this.GetRoleOptionId(
                         RoleAbilityCommonOption.AbilityCount),
-                    out option) && abilityCountButton != null)
+                    out option))
             {
-                abilityCountButton.UpdateAbilityCount(option.GetValue());
+                behavior.SetAbilityCount(option.GetValue());
             }
-
-            this.Button.SetReportAbility(
-                allOps[this.GetRoleOptionId(GhostRoleOption.IsReportAbility)].GetValue());
-
-            this.Button.ResetCoolTimer();
+            this.Button.OnMeetingEnd();
         }
+
+        protected bool isReportAbility() => OptionHolder.AllOption[
+            this.GetRoleOptionId(GhostRoleOption.IsReportAbility)].GetValue();
 
         protected bool IsCommonUse() => 
             PlayerControl.LocalPlayer && 
@@ -444,7 +450,7 @@ namespace ExtremeRoles.GhostRoles.API
                 OptionHolder.SpawnRate, null, true,
                 colored: true);
 
-            int spawnNum = this.IsImpostor() ? OptionHolder.MaxImposterNum : OptionHolder.VanillaMaxPlayerNum - 1;
+            int spawnNum = this.IsImpostor() ? GameSystem.MaxImposterNum : GameSystem.VanillaMaxPlayerNum - 1;
 
             CreateIntOption(
                 RoleCommonOption.RoleNum,
@@ -459,9 +465,9 @@ namespace ExtremeRoles.GhostRoles.API
 
         public abstract void Initialize();
 
-        public abstract void ReseOnMeetingEnd();
+        protected abstract void OnMeetingEndHook();
 
-        public abstract void ReseOnMeetingStart();
+        protected abstract void OnMeetingStartHook();
 
         protected abstract void CreateSpecificOption(IOption parentOps);
 

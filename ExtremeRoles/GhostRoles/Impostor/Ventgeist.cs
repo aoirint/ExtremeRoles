@@ -1,13 +1,15 @@
-﻿using ExtremeRoles.GhostRoles.API;
+﻿using System.Collections.Generic;
+
+using UnityEngine;
+
+using ExtremeRoles.Extension.Ship;
+using ExtremeRoles.GhostRoles.API;
 using ExtremeRoles.Module;
-using ExtremeRoles.Module.AbilityButton.GhostRoles;
-using ExtremeRoles.Performance;
+using ExtremeRoles.Module.AbilityFactory;
 using ExtremeRoles.Roles;
 using ExtremeRoles.Roles.API;
-using ExtremeRoles.Extension.Ship;
-using Hazel;
-using System.Collections.Generic;
-using UnityEngine;
+using ExtremeRoles.Performance;
+
 
 namespace ExtremeRoles.GhostRoles.Impostor
 {
@@ -36,13 +38,14 @@ namespace ExtremeRoles.GhostRoles.Impostor
 
         public override void CreateAbility()
         {
-            this.Button = new AbilityCountButton(
+            this.Button = GhostRoleAbilityFactory.CreateCountAbility(
                 AbilityType.VentgeistVentAnime,
-                this.UseAbility,
+                FastDestroyableSingleton<HudManager>.Instance.ImpostorVentButton.graphic.sprite,
+                this.isReportAbility(),
                 this.isPreCheck,
                 this.isAbilityUse,
-                FastDestroyableSingleton<HudManager>.Instance.ImpostorVentButton.graphic.sprite,
-                rpcHostCallAbility: abilityCall);
+                this.UseAbility,
+                abilityCall, true);
             this.ButtonInit();
         }
 
@@ -54,12 +57,12 @@ namespace ExtremeRoles.GhostRoles.Impostor
                 GetRoleOptionId(Option.Range)].GetValue();
         }
 
-        public override void ReseOnMeetingEnd()
+        protected override void OnMeetingEndHook()
         {
             return;
         }
 
-        public override void ReseOnMeetingStart()
+        protected override void OnMeetingStartHook()
         {
             this.targetVent = null;
         }
